@@ -30,7 +30,7 @@ public class CalculatorService {
 
         List<Double> operands = op.getOperands();
         if (operands == null || operands.size() < 2) {
-            throw new IllegalArgumentException("You need more operands");
+            throw new IllegalArgumentException("More operands needed");
         }
 
         switch (operation) {
