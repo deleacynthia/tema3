@@ -20,17 +20,17 @@ public class CalculatorController {
     @PostMapping("/do-math")
     public ResponseEntity<String> doMath(@RequestBody List<Calculator> operations) {
         String filename = UUID.randomUUID().toString() + ".txt";
-        calculatorService.resetStatusList(filename, operations.size());
+        calculatorService.setStatusList(filename, operations.size());
 
         List<Double> results = new ArrayList<>(Collections.nCopies(operations.size(), null));
 
         for (int i = 0; i < operations.size(); i++) {
             Calculator op = operations.get(i);
-            int finalI = i;
+            int aux = i;
             Thread t = new Thread(() -> {
-                Double result = calculatorService.performOperationSync(op);
-                results.set(finalI, result);
-                calculatorService.updateStatus(filename, finalI, true);
+                Double result = calculatorService.calculate(op);
+                results.set(aux, result);
+                calculatorService.checkStatus(filename, aux, true);
 
                 if (!results.contains(null)) {
                     try {
@@ -48,25 +48,25 @@ public class CalculatorController {
 
     @GetMapping("/check-finished/{filename}")
     public ResponseEntity<Boolean> checkFinished(@PathVariable String filename) {
-        return ResponseEntity.ok(calculatorService.allCalculationsFinished(filename));
+        return ResponseEntity.ok(calculatorService.checkFinished(filename));
     }
 
     @GetMapping("/results/{filename}")
     public ResponseEntity<Object> getResults(@PathVariable String filename) {
 
-        if(!calculatorService.allCalculationsFinished(filename)) {
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Operations are still processing. Try again later.");
+        if(!calculatorService.checkFinished(filename)) {
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Op still in process");
         }
 
         try {
-            Optional<List<Double>> results = calculatorService.readFromFile(filename);
+            Optional<List<Double>> results = calculatorService.readFile(filename);
             if (results.isPresent()) {
                 return ResponseEntity.ok(results.get());
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Results not found.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Res not found");
             }
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving results.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
         }
     }
 
